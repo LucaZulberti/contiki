@@ -115,7 +115,7 @@
  * {@
  */
 /* Notify various examples that we don't have Buttons */
-#define PLATFORM_HAS_BUTTON     0
+#define PLATFORM_HAS_BUTTON     1
 /** @} */
 /*---------------------------------------------------------------------------*/
 /**
@@ -128,7 +128,7 @@
  * @{
  */
 #define ADC_BAT_PORT            GPIO_A_NUM /**< ALS power GPIO control port */
-#define ADC_BAT_PIN             7 /**< battery voltage ANA pin */
+#define ADC_BAT_PIN             6 /**< battery voltage ANA pin */
 
 /* Notify various examples that we have Battery */
 #define PLATFORM_HAS_BATTERY    1
@@ -204,9 +204,9 @@
 #define SPI1_IN_USE             0
 #if SPI0_IN_USE
 /** Clock port SPI0 */
-#define SPI0_CLK_PORT           GPIO_C_NUM
+#define SPI0_CLK_PORT           GPIO_D_NUM
 /** Clock pin SPI0 */
-#define SPI0_CLK_PIN            7
+#define SPI0_CLK_PIN            4
 /** TX port SPI0 (master mode: MOSI) */
 #define SPI0_TX_PORT            GPIO_D_NUM
 /** TX pin SPI0 */
@@ -255,7 +255,7 @@
  * \name Device string used on startup
  * @{
  */
-#define BOARD_STRING "HCE WI502 cc2538-powered board"
+#define BOARD_STRING "HCE WI502 IoT Module, cc2538-powered board"
 /** @} */
 
 #endif /* BOARD_H_ */
