@@ -60,6 +60,21 @@ value(int type)
 
   res = adc_get(channel, SOC_ADC_ADCCON_REF_INT, SOC_ADC_ADCCON_DIV_512);
 
+  res = res >> 4;
+
+  if (res > ADC_BAT_THR_CHARGED)
+    res = 100;
+  else if (res > ADC_BAT_THR_HIGH)
+    res = 75;
+  else if (res > ADC_BAT_THR_MIDDLE)
+    res = 50;
+  else if (res > ADC_BAT_THR_LOW)
+    res = 25;
+  else if (res > ADC_BAT_THR_CRIT)
+    res = 5;
+  else
+    res = 0;
+
   return res;
 }
 /*---------------------------------------------------------------------------*/

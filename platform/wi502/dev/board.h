@@ -130,6 +130,22 @@
 #define ADC_BAT_PORT            GPIO_A_NUM /**< ALS power GPIO control port */
 #define ADC_BAT_PIN             6 /**< battery voltage ANA pin */
 
+#define ADC_BAT_IN_SCALE_FACTOR_CENT 5450
+
+#ifndef USER_BAT_THR_CONF
+#define BAT_THR_CHARGED         4.1
+#define BAT_THR_HIGH            3.9
+#define BAT_THR_MIDDLE          3.7
+#define BAT_THR_LOW             3.5
+#define BAT_THR_CRIT            3.3
+#endif
+
+#define ADC_BAT_THR_CHARGED     (BAT_THR_CHARGED * 2048 * 10000) / (119 * ADC_BAT_IN_SCALE_FACTOR_CENT)
+#define ADC_BAT_THR_HIGH        (BAT_THR_HIGH * 2048 * 10000) / (119 * ADC_BAT_IN_SCALE_FACTOR_CENT)
+#define ADC_BAT_THR_MIDDLE      (BAT_THR_MIDDLE * 2048 * 10000) / (119 * ADC_BAT_IN_SCALE_FACTOR_CENT)
+#define ADC_BAT_THR_LOW         (BAT_THR_LOW * 2048 * 10000) / (119 * ADC_BAT_IN_SCALE_FACTOR_CENT)
+#define ADC_BAT_THR_CRIT        (BAT_THR_CRIT * 2048 * 10000) / (119 * ADC_BAT_IN_SCALE_FACTOR_CENT)
+
 /* Notify various examples that we have Battery */
 #define PLATFORM_HAS_BATTERY    1
 /** @} */
