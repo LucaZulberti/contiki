@@ -52,11 +52,17 @@
 
 #include <stdio.h>
 /*---------------------------------------------------------------------------*/
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
-#define PRINTF(...) printf(__VA_ARGS__)
+#define PRINTF(fmt, args...) printf(fmt, ## args)
+#define INFO(fmt, args...) PRINTF("[INFO - TSL256X] %s: %s: " fmt "\n", \
+                                        __FILE__, __func__ , ## args)
+#define ERROR(fmt, args...) PRINTF("[ERROR - TSL256X] %s: %s: " fmt "\n", \
+                                        __FILE__, __func__ , ## args)
 #else
-#define PRINTF(...)
+#define PRINTF(fmt, args...)
+#define INFO(fmt, args...)
+#define ERROR(fmt, args...)
 #endif
 /*---------------------------------------------------------------------------*/
 #define TSL256X_INT_PORT_BASE  GPIO_PORT_TO_BASE(TSL256X_INT_PORT)
@@ -152,7 +158,7 @@ static int
 tsl256x_write_reg(uint8_t *buf, uint8_t num)
 {
   if((buf == NULL) || (num <= 0)) {
-    PRINTF("TSL256X: invalid write values\n");
+    ERROR("invalid write values");
     return TSL256X_ERROR;
   }
 
@@ -172,13 +178,16 @@ tsl256x_on(void)
   if(tsl256x_write_reg(buf, 2) == I2C_MASTER_ERR_NONE) {
     if(i2c_single_receive(TSL256X_ADDR, &buf[0]) == I2C_MASTER_ERR_NONE) {
       if((buf[0] & 0x0F) == TSL256X_CONTROL_POWER_ON) {
-        PRINTF("TSL256X: powered on\n");
+        INFO("powered on");
         return TSL256X_SUCCESS;
-      }
+	  } else {
+		ERROR("failed to power on (received: 0x%x)", buf[0] & 0x0F);
+	  }
     }
+  } else {
+    ERROR("failed to power on (I2C write error)");
   }
 
-  PRINTF("TSL256X: failed to power on\n");
   return TSL256X_ERROR;
 }
 /*---------------------------------------------------------------------------*/
@@ -187,7 +196,7 @@ tsl256x_id_register(uint8_t *buf)
 {
   if(tsl256x_read_reg((TSL256X_COMMAND + TSL256X_ID_REG),
                       buf, 1) == TSL256X_SUCCESS) {
-    PRINTF("TSL256X: partnum/revnum 0x%02X\n", *buf);
+    INFO("partnum/revnum 0x%02X", *buf);
     return TSL256X_SUCCESS;
   }
 
@@ -202,11 +211,11 @@ tsl256x_off(void)
   buf[1] = TSL256X_CONTROL_POWER_OFF;
 
   if(tsl256x_write_reg(buf, 2) == I2C_MASTER_ERR_NONE) {
-    PRINTF("TSL256X: powered off\n");
+    INFO("powered off");
     return TSL256X_SUCCESS;
   }
 
-  PRINTF("TSL256X: failed to power off\n");
+  ERROR("failed to power off");
   return TSL256X_ERROR;
 }
 /*---------------------------------------------------------------------------*/
@@ -215,7 +224,7 @@ tsl256x_clear_interrupt(void)
 {
   uint8_t buf = (TSL256X_COMMAND + TSL256X_CLEAR_INTERRUPT);
   if(tsl256x_write_reg(&buf, 1) != I2C_MASTER_ERR_NONE) {
-    PRINTF("TSL256X: failed to clear the interrupt\n");
+    ERROR("failed to clear the interrupt");
     return TSL256X_ERROR;
   }
   return TSL256X_SUCCESS;
@@ -232,13 +241,13 @@ tsl256x_read_sensor(uint16_t *lux)
     if(tsl256x_read_reg((TSL256X_COMMAND + TSL256X_D1LOW),
                         &buf[2], 2) == TSL256X_SUCCESS) {
 
-      PRINTF("TSL256X: CH0 0x%02X%02X CH1 0x%02X%02X\n", buf[1], buf[0],
+      INFO("CH0 0x%02X%02X CH1 0x%02X%02X", buf[1], buf[0],
              buf[3], buf[2]);
       *lux = calculate_lux(buf);
       return TSL256X_SUCCESS;
     }
   }
-  PRINTF("TSL256X: failed to read\n");
+  ERROR("failed to read");
   return TSL256X_ERROR;
 }
 /*---------------------------------------------------------------------------*/
@@ -271,16 +280,12 @@ configure(int type, int value)
 {
   uint8_t buf[3];
 
-  if((type != TSL256X_ACTIVE) && (type != TSL256X_INT_OVER) &&
-     (type != TSL256X_INT_BELOW) && (type != TSL256X_INT_DISABLE) &&
-     (type != TSL256X_TIMMING_CFG)) {
-    PRINTF("TSL256X: invalid start value\n");
-    return TSL256X_ERROR;
-  }
-
   /* As default the power-on values of the sensor are gain 1X, 402ms integration
    * time (not nominal), with manual control disabled
    */
+  if(type == TSL256X_HW_INIT) {
+    return TSL256X_SUCCESS;
+  }
 
   if(type == TSL256X_ACTIVE) {
     if(value) {
@@ -297,7 +302,7 @@ configure(int type, int value)
                                 &buf[0], 1) == TSL256X_SUCCESS) {
               gain = buf[0] & TSL256X_TIMMING_GAIN;
               timming = buf[0] & TSL256X_TIMMING_INTEG_MASK;
-              PRINTF("TSL256X: enabled, timming %u gain %u\n", timming, gain);
+              INFO("enabled, timming %u gain %u", timming, gain);
 
               /* Restart the over interrupt threshold */
               buf[0] = (TSL256X_COMMAND + TSL256X_THRHIGHLOW);
@@ -305,7 +310,7 @@ configure(int type, int value)
               buf[2] = 0xFF;
 
               if(tsl256x_write_reg(buf, 3) != TSL256X_SUCCESS) {
-                PRINTF("TSL256X: failed to clear over interrupt\n");
+                ERROR("failed to clear over interrupt");
                 return TSL256X_ERROR;
               }
 
@@ -315,7 +320,7 @@ configure(int type, int value)
               buf[2] = 0x00;
 
               if(tsl256x_write_reg(buf, 3) != TSL256X_SUCCESS) {
-                PRINTF("TSL256X: failed to clear below interrupt\n");
+                ERROR("failed to clear below interrupt");
                 return TSL256X_ERROR;
               }
 
@@ -331,7 +336,7 @@ configure(int type, int value)
       return TSL256X_ERROR;
     } else {
       if(tsl256x_off() == TSL256X_SUCCESS) {
-        PRINTF("TSL256X: stopped\n");
+        INFO("stopped");
         enabled = 0;
         return TSL256X_SUCCESS;
       }
@@ -340,7 +345,7 @@ configure(int type, int value)
   }
 
   if(!enabled) {
-    PRINTF("TSL256X: sensor not started\n");
+    ERROR("sensor not started");
     return TSL256X_ERROR;
   }
 
@@ -359,7 +364,7 @@ configure(int type, int value)
     buf[1] = TSL256X_INTR_DISABLED;
 
     if(tsl256x_write_reg(buf, 2) != TSL256X_SUCCESS) {
-      PRINTF("TSL256X: failed to disable the interrupt\n");
+      ERROR("failed to disable the interrupt");
       return TSL256X_ERROR;
     }
     return TSL256X_SUCCESS;
@@ -369,7 +374,7 @@ configure(int type, int value)
   if(type == TSL256X_TIMMING_CFG) {
     if((value != TSL256X_G16X_402MS) && (value != TSL256X_G1X_402MS) &&
        (value != TSL256X_G1X_101MS) && (value != TSL256X_G1X_13_7MS)) {
-      PRINTF("TSL256X: invalid timming configuration values\n");
+      ERROR("invalid timming configuration values");
       return TSL256X_ERROR;
     }
 
@@ -394,10 +399,10 @@ configure(int type, int value)
         break;
       }
 
-      PRINTF("TSL256X: new timming %u gain %u\n", timming, gain);
+      INFO("new timming %u gain %u", timming, gain);
       return TSL256X_SUCCESS;
     }
-    PRINTF("TSL256X: failed to configure timming\n");
+    ERROR("failed to configure timming");
     return TSL256X_ERROR;
   }
 
@@ -416,7 +421,7 @@ configure(int type, int value)
   }
 
   if(tsl256x_write_reg(buf, 3) != TSL256X_SUCCESS) {
-    PRINTF("TSL256X: failed to set interrupt level\n");
+    ERROR("failed to set interrupt level");
     return TSL256X_ERROR;
   }
 
@@ -428,7 +433,7 @@ configure(int type, int value)
   buf[1] += TSL256X_INT_PERSIST_2_CYCLES;
 
   if(tsl256x_write_reg(buf, 2) != TSL256X_SUCCESS) {
-    PRINTF("TSL256X: failed to enable interrupt\n");
+    ERROR("failed to enable interrupt");
     return TSL256X_ERROR;
   }
 
@@ -453,7 +458,7 @@ configure(int type, int value)
   ioc_set_over(TSL256X_INT_PORT, TSL256X_INT_PIN, IOC_OVERRIDE_PUE);
   NVIC_EnableIRQ(TSL256X_INT_VECTOR);
 
-  PRINTF("TSL256X: Interrupt configured\n");
+  INFO("interrupt configured");
   return TSL256X_SUCCESS;
 }
 /*---------------------------------------------------------------------------*/
@@ -474,7 +479,7 @@ value(int type)
   uint16_t lux;
 
   if(!enabled) {
-    PRINTF("TSL256X: sensor not started\n");
+    ERROR("sensor not started");
     return TSL256X_ERROR;
   }
 
@@ -482,7 +487,7 @@ value(int type)
     if(tsl256x_read_sensor(&lux) != TSL256X_ERROR) {
       return lux;
     }
-    PRINTF("TSL256X: fail to read\n");
+    ERROR("failed to read");
   }
   return TSL256X_ERROR;
 }

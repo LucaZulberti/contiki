@@ -49,12 +49,12 @@
 
 #include <stdio.h>
 /*---------------------------------------------------------------------------*/
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #define PRINTF(fmt, args...) printf(fmt, ## args)
-#define INFO(fmt, args...) PRINTF("[INFO] %s: %s: " fmt "\n", \
+#define INFO(fmt, args...) PRINTF("[INFO - MMA8X5X] %s: %s: " fmt "\n", \
                                         __FILE__, __func__ , ## args)
-#define ERROR(fmt, args...) PRINTF("[ERROR] %s: %s: " fmt "\n", \
+#define ERROR(fmt, args...) PRINTF("[ERROR - MMA8X5X] %s: %s: " fmt "\n", \
                                         __FILE__, __func__ , ## args)
 #else
 #define PRINTF(fmt, args...)
@@ -144,8 +144,10 @@ mma8x5x_test(void)
   uint8_t reg;
   int i;
 
-  if(mma8x5x_read_reg(MMA8X5X_WHO_AM_I, &reg, 1) != MMA8X5X_SUCCESS)
-    return MMA8X5X_ERROR;
+  if(mma8x5x_read_reg(MMA8X5X_WHO_AM_I, &reg, 1) != MMA8X5X_SUCCESS) {
+    ERROR("I2C write error");
+	return MMA8X5X_ERROR;
+  }
 
   for(i = 0; i < sizeof(mma8x5x_device_id); i++) {
     if(reg == mma8x5x_device_id[i]) {

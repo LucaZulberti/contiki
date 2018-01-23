@@ -192,6 +192,7 @@ extern void (*tsl256x_int_callback)(uint8_t value);
 #define TSL256X_ERROR             -1
 
 #define TSL256X_ACTIVE          SENSORS_ACTIVE
+#define TSL256X_HW_INIT         SENSORS_HW_INIT
 #define TSL256X_INT_OVER        HW_INT_OVER_THRS
 #define TSL256X_INT_BELOW       HW_INT_BELOW_THRS
 #define TSL256X_INT_DISABLE     HW_INT_DISABLE

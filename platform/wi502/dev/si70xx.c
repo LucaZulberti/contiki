@@ -49,11 +49,17 @@
 
 #include <stdio.h>
 /*---------------------------------------------------------------------------*/
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
-#define PRINTF(...) printf(__VA_ARGS__)
+#define PRINTF(fmt, args...) printf(fmt, ## args)
+#define INFO(fmt, args...) PRINTF("[INFO - SI70XX] %s: %s: " fmt "\n", \
+                                        __FILE__, __func__ , ## args)
+#define ERROR(fmt, args...) PRINTF("[ERROR - SI70XX] %s: %s: " fmt "\n", \
+                                        __FILE__, __func__ , ## args)
 #else
-#define PRINTF(...)
+#define PRINTF(fmt, args...)
+#define INFO(fmt, args...)
+#define ERROR(fmt, args...)
 #endif
 /*---------------------------------------------------------------------------*/
 static uint8_t enabled, powered_on;
@@ -85,7 +91,7 @@ si70xx_write_byte(uint8_t *buf)
 {
   int ret;
   if(buf == NULL) {
-    PRINTF("SI70XX: invalid write value\n");
+    ERROR("invalid write value");
     return SI70XX_ERROR;
   }
 
@@ -93,7 +99,6 @@ si70xx_write_byte(uint8_t *buf)
   if(ret == I2C_MASTER_ERR_NONE) {
     return SI70XX_SUCCESS;
   }
-  PRINTF("SI70XX: single_send return value (0x%x)\n", ret);
   return SI70XX_ERROR;
 }
 /*---------------------------------------------------------------------------*/
@@ -103,7 +108,7 @@ si70xx_write_bytes(uint8_t *buf, uint8_t num)
   int ret;
 
   if(buf == NULL) {
-    PRINTF("SI70XX: invalid write values\n");
+    ERROR("invalid write values");
     return SI70XX_ERROR;
   }
 
@@ -111,7 +116,7 @@ si70xx_write_bytes(uint8_t *buf, uint8_t num)
   if(ret == I2C_MASTER_ERR_NONE) {
     return SI70XX_SUCCESS;
   }
-  PRINTF("SI70XX: burst_send return value (0x%x)\n", ret);
+  ERROR("burst_send return value (0x%x)", ret);
   return SI70XX_ERROR;
 }
 /*---------------------------------------------------------------------------*/
@@ -120,7 +125,7 @@ si70xx_read_byte(uint8_t *buf)
 {
   int ret;
   if(buf == NULL) {
-    PRINTF("SI70XX: invalid read value\n");
+    ERROR("invalid read value");
     return SI70XX_ERROR;
   }
 
@@ -128,7 +133,7 @@ si70xx_read_byte(uint8_t *buf)
   if(ret == I2C_MASTER_ERR_NONE)
     return SI70XX_SUCCESS;
 
-  PRINTF("SI70XX: single_receive return value (0x%x)\n", ret);
+  ERROR("single_receive return value (0x%x)", ret);
   return SI70XX_ERROR;
 }
 /*---------------------------------------------------------------------------*/
@@ -137,7 +142,7 @@ si70xx_read_bytes(uint8_t *buf, uint8_t num)
 {
   int ret;
   if((buf == NULL) || (num <= 0)) {
-    PRINTF("SI70XX: invalid read values\n");
+    ERROR("invalid read values");
     return SI70XX_ERROR;
   }
 
@@ -145,7 +150,7 @@ si70xx_read_bytes(uint8_t *buf, uint8_t num)
   if(ret == I2C_MASTER_ERR_NONE) {
     return SI70XX_SUCCESS;
   }
-  PRINTF("SI70XX: burst_receive return value (0x%x)\n", ret);
+  ERROR("burst_receive return value (0x%x)", ret);
   return SI70XX_ERROR;
 }
 /*---------------------------------------------------------------------------*/
@@ -208,12 +213,12 @@ si70xx_test(void)
   uint8_t id = 0, rev = 0;
 
   if(si70xx_get_revision(&rev) != SI70XX_SUCCESS) {
-    PRINTF("SI70XX: cannot get rev number\n");
+    ERROR("cannot get rev number");
     return SI70XX_ERROR;
   }
 
   if(rev != SI70XX_REVISION_1 && rev != SI70XX_REVISION_2) {
-    PRINTF("SI70XX: bad rev number (0x%x)\n", rev);
+    ERROR("bad rev number (0x%x)", rev);
     return SI70XX_ERROR;
   }
 
@@ -222,11 +227,11 @@ si70xx_test(void)
 
   if(id != SI70XX_ID_SI7006 && id != SI70XX_ID_SI7013 &&
     id != SI70XX_ID_SI7020 && id != SI70XX_ID_SI7021) {
-    PRINTF("SI70XX: bad id (0x%x)\n", id);
+    ERROR("bad id (0x%x)", id);
     return SI70XX_ERROR;
   }
 
-  PRINTF("SI70XX: test passed\n");
+  INFO("test passed");
 
   return SI70XX_SUCCESS;
 }
@@ -245,11 +250,11 @@ si70xx_on(void)
     timer_set(&reset_timer, CLOCK_SECOND / 40);
     while (!timer_expired(&reset_timer)) {}
     powered_on = 1;
-    PRINTF("SI70XX: powered on\n");
+    INFO("powered on");
     return SI70XX_SUCCESS;
   }
 
-  PRINTF("SI70XX: failed to power on\n");
+  ERROR("failed to power on (I2C write error)");
   return SI70XX_ERROR;
 }
 /*---------------------------------------------------------------------------*/
@@ -258,7 +263,7 @@ si70xx_off(void)
 {
   /* TODO */
   powered_on = 0;
-  PRINTF("SI70XX: powered off\n");
+  INFO("powered off");
   return SI70XX_SUCCESS;
 }
 /*---------------------------------------------------------------------------*/
@@ -278,7 +283,7 @@ configure(int type, int value)
       /* Configure max resolution */
       if(si70xx_write_reg(SI70XX_WRITE_USER_REG, 0x3a) != SI70XX_SUCCESS)
         return SI70XX_ERROR;
-      PRINTF("SI70XX: resolution setted\n");
+      INFO("resolution setted");
       return SI70XX_SUCCESS;
     } else {
       if (!enabled)
@@ -286,7 +291,7 @@ configure(int type, int value)
       if(si70xx_off() != SI70XX_SUCCESS)
         return SI70XX_ERROR;
 
-      PRINTF("SI70XX: stopped\n");
+      INFO("stopped");
       enabled = 0;
       return SI70XX_SUCCESS;
     }
@@ -297,7 +302,7 @@ configure(int type, int value)
   }
 
   if(!enabled) {
-    PRINTF("SI70XX: sensor not started\n");
+    ERROR("sensor not started");
     return SI70XX_ERROR;
   }
 
@@ -324,7 +329,7 @@ temp_value(int type)
   int raw, temp;
 
   if(!enabled) {
-    PRINTF("SI70XX: sensor not started\n");
+    ERROR("sensor not started");
     return SI70XX_ERROR;
   }
 
@@ -334,7 +339,7 @@ temp_value(int type)
       temp = ((17572 * raw) / 65536) - 4685;
       return temp;
     }
-    PRINTF("SI70XX: fail to read temperature\n");
+    ERROR("failed to read temperature");
   }
   return SI70XX_ERROR;
 }
@@ -347,7 +352,7 @@ humi_value(int type)
   int raw, humidity;
 
   if(!enabled) {
-    PRINTF("SI70XX: sensor not started\n");
+    ERROR("sensor not started");
     return SI70XX_ERROR;
   }
 
@@ -363,7 +368,7 @@ humi_value(int type)
         return humidity;
       }
     }
-    PRINTF("SI70XX: fail to read humidity\n");
+    ERROR("failed to read humidity");
   }
   return SI70XX_ERROR;
 }
