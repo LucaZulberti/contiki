@@ -274,6 +274,8 @@
 #define BOARD_STRING "HCE WI502 IoT Module, cc2538-powered board"
 /** @} */
 
+#define COAP_MAX_OPEN_TRANSACTIONS      10
+
 #endif /* BOARD_H_ */
 
 /**
