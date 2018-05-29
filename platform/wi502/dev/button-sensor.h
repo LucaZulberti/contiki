@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2012, Texas Instruments Incorporated - http://www.ti.com/
- * Copyright (c) 2016, Luca Zulberti <luca.zulberti@cosino.io>
- * Copyright (c) 2016, HCE Engineering <info@hce-engineering.com>
+ * Copyright (c) 2018, Luca Zulberti <luca.zulberti@cosino.io>
+ * Copyright (c) 2018, HCE Engineering <info@hce-engineering.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,21 +34,30 @@
  * \addtogroup wi502-hce-sensors
  * @{
  *
- * Generic module controlling sensors on the WI502 board
+ * \defgroup wi502-button-sensor WI502 Button Driver
+ *
+ * Driver for the WI502 button
  * @{
  *
  * \file
- * Implementation of a generic module controlling WI502 sensors
+ * Header file for the WI502 Button Driver
  */
-#include "contiki.h"
-#include "dev/wi502-sensors.h"
+#ifndef BUTTON_SENSOR_H_
+#define BUTTON_SENSOR_H_
 
-#include <string.h>
+#include "lib/sensors.h"
+#include "dev/gpio.h"
 
-/** \brief Exports a global symbol to be used by the sensor API */
-SENSORS(&battery_sensor, &light_sensor, &temperature_sensor, &humidity_sensor,
-        &accelerometer_sensor, &button_sensor, &cc2538_temp_sensor,
-	&vdd3_sensor);
+#define BUTTON_SENSOR "Button Sensor"
+
+/** Button sensor structure */
+extern const struct sensors_sensor button_sensor;
+/*---------------------------------------------------------------------------*/
+#endif /* BUTTON_SENSOR_H_ */
+
+/** \brief Common initialiser for the WI502 button */
+void button_sensor_init();
+
 /**
  * @}
  * @}

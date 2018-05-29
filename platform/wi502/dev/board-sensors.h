@@ -48,6 +48,7 @@
  * Sensors supported by Contiki OS in /core/dev folder.
  * @{
  */
+#include "dev/button-sensor.h"
 #include "dev/battery-sensor.h"
 #include "dev/cc2538-sensors.h"
 /** @} */

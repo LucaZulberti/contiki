@@ -111,9 +111,16 @@
 /*---------------------------------------------------------------------------*/
 /** \name BUTTON configuration
  *
- * There is no Buttons on WI502 board
+ * There is just the backdor Button on WI502 board that can be used by the
+ * user during normal execution of the program:
+ *  - BUTTON_USER -> PA7
  * {@
  */
+/** BUTTON_USER -> PA7 */
+#define BUTTON_USER_PORT      GPIO_A_NUM
+#define BUTTON_USER_PIN       7
+#define BUTTON_USER_VECTOR    GPIO_A_IRQn
+
 /* Notify various examples that we don't have Buttons */
 #define PLATFORM_HAS_BUTTON     1
 /** @} */
