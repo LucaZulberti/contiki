@@ -137,8 +137,6 @@
 #define ADC_BAT_PORT            GPIO_A_NUM /**< ALS power GPIO control port */
 #define ADC_BAT_PIN             6 /**< battery voltage ANA pin */
 
-#define ADC_BAT_IN_SCALE_FACTOR_CENT 5450
-
 #ifndef USER_BAT_THR_CONF
 #define BAT_THR_CHARGED         4.1
 #define BAT_THR_HIGH            3.9
@@ -147,11 +145,28 @@
 #define BAT_THR_CRIT            3.3
 #endif
 
-#define ADC_BAT_THR_CHARGED     (BAT_THR_CHARGED * 2048 * 10000) / (119 * ADC_BAT_IN_SCALE_FACTOR_CENT)
-#define ADC_BAT_THR_HIGH        (BAT_THR_HIGH * 2048 * 10000) / (119 * ADC_BAT_IN_SCALE_FACTOR_CENT)
-#define ADC_BAT_THR_MIDDLE      (BAT_THR_MIDDLE * 2048 * 10000) / (119 * ADC_BAT_IN_SCALE_FACTOR_CENT)
-#define ADC_BAT_THR_LOW         (BAT_THR_LOW * 2048 * 10000) / (119 * ADC_BAT_IN_SCALE_FACTOR_CENT)
-#define ADC_BAT_THR_CRIT        (BAT_THR_CRIT * 2048 * 10000) / (119 * ADC_BAT_IN_SCALE_FACTOR_CENT)
+/* Scale value between min and max to 12 bit */
+#define ADC_SCALE(min, max, val)					\
+	(4096 * (val - min) / (max - min))
+/**
+ * Scale factor at the Battery pin input
+ *
+ * There is a 1Mohm resistor that scales the voltage due to the input
+ * impedence of the ADC.
+ * Scale factor = 4.135
+ *
+ * This macro scale the voltage requested to the expected ADC result.
+ *   min = ground (0V)
+ *   max = Vdd (3V)
+ *   val = battery voltage
+ **/
+#define ADC_BAT_SCALE(val)	ADC_SCALE(0, 3, val / 4.135)
+
+#define ADC_BAT_THR_CHARGED     ADC_BAT_SCALE(BAT_THR_CHARGED)
+#define ADC_BAT_THR_HIGH        ADC_BAT_SCALE(BAT_THR_HIGH)
+#define ADC_BAT_THR_MIDDLE      ADC_BAT_SCALE(BAT_THR_MIDDLE)
+#define ADC_BAT_THR_LOW         ADC_BAT_SCALE(BAT_THR_LOW)
+#define ADC_BAT_THR_CRIT        ADC_BAT_SCALE(BAT_THR_CRIT)
 
 /* Notify various examples that we have Battery */
 #define PLATFORM_HAS_BATTERY    1

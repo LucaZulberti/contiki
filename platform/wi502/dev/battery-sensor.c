@@ -48,6 +48,7 @@
 #include "dev/battery-sensor.h"
 
 #include <stdint.h>
+#include <stdio.h>
 /*---------------------------------------------------------------------------*/
 #define ADC_BAT_PORT_BASE    GPIO_PORT_TO_BASE(ADC_BAT_PORT)
 #define ADC_BAT_PIN_MASK     GPIO_PIN_MASK(ADC_BAT_PIN)
@@ -62,18 +63,24 @@ value(int type)
 
   res = res >> 4;
 
+  printf("---- ADC VALUE = %d ----\n", res);
+
   if (res > ADC_BAT_THR_CHARGED)
     res = 100;
   else if (res > ADC_BAT_THR_HIGH)
-    res = 75;
+    res = 75 + 25 * (res - ADC_BAT_THR_HIGH)
+	    / (ADC_BAT_THR_CHARGED - ADC_BAT_THR_HIGH);
   else if (res > ADC_BAT_THR_MIDDLE)
-    res = 50;
+    res = 50 + 25 * (res - ADC_BAT_THR_MIDDLE)
+	    / (ADC_BAT_THR_HIGH - ADC_BAT_THR_MIDDLE);
   else if (res > ADC_BAT_THR_LOW)
-    res = 25;
+    res = 25 + 25 * (res - ADC_BAT_THR_LOW)
+	    / (ADC_BAT_THR_MIDDLE - ADC_BAT_THR_LOW);
   else if (res > ADC_BAT_THR_CRIT)
-    res = 5;
+    res = 5 + 20 * (res - ADC_BAT_THR_CRIT)
+	    / (ADC_BAT_THR_LOW - ADC_BAT_THR_CRIT);
   else
-    res = 0;
+    res = 0 + 5 * res / ADC_BAT_THR_CRIT;
 
   return res;
 }
